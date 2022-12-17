@@ -56,7 +56,7 @@ def build_keyboard(items):
 def get_next_dates():
     dates = []
     for day in range(3):
-        date = str(datetime.datetime.today() + datetime.timedelta(days=day)).split(' ')[0]
+        date = str(datetime.datetime.today() + datetime.timedelta(days=day+1)).split(' ')[0]
         dates.append(date)
     return dates
 
@@ -96,18 +96,24 @@ def handle_updates(updates):
                     keyboard = build_keyboard(get_slots(record[4]))
                     send_reply("Select Slot :", chat, keyboard)
                     db.update_item(owner_id=chat, column='date', data=text)
+                elif text.lower() == "cancel":
+                    db.delete_item(chat)
+                    send_reply("Your appointment is cancelled", chat)
+                elif text.lower() == "\start":
+                    continue 
                 else:
                     if record[5]:
-                        message = "Your Appointment is already booked!.. {} , Your {} vaccination apppointment is booked successfully for {}'o clock on {} at {}".format(
+                        message = "Your Appointment is already booked!.. {} , Your {} vaccination apppointment is booked successfully for {}'o clock on {} at {} \n Send <Cancel | cancel> to delete".format(
                             record[1], record[3], record[5], record[4], record[2])
                         send_reply(message, chat)
                     else:
                         db.update_item(owner_id=chat, column='slot', data=text)
+                        record=db.get_items(owner=chat).fetchone()
                         message = "Congratulations!!.. {} , Your {} vaccination apppointment is booked successfully for {}'o clock on {} at {}".format(
                             record[1], record[3], record[5], record[4], record[2])
                         send_reply(message, chat)
         except:
-            pass
+            send_reply("No appointment found \nPlease enter <Book | book> to book an appointment", chat)
 
 
 def main():
