@@ -73,13 +73,23 @@ def get_slots(date):
 
 def handle_updates(updates):
     for update in updates["result"]:
-        text = update["message"]["text"]
-        chat = update["message"]["chat"]["id"]
+        try:
+            text = update["message"]["text"]
+            chat = update["message"]["chat"]["id"]
+        except KeyError:
+            chat = update["my_chat_member"]["chat"]["id"]
+            send_reply("Unknown Error from user end",chat)
+
         try:
             record = db.get_items(chat).fetchone()
             if text.lower() == "book":
-                db.add_item(owner_id=chat)
-                send_reply("Please Enter Name:", chat)
+                if record:
+                    message = "Your Appointment is already booked!.. {} , Your {} vaccination apppointment is booked successfully for {}'o clock on {} at {} \n Send <Cancel | cancel> to delete".format(
+                        record[1], record[3], record[5], record[4], record[2])
+                    send_reply(message, chat)
+                else:
+                    db.add_item(owner_id=chat)
+                    send_reply("Please Enter Name:", chat)
             else:
                 if record[1] == None:
                     send_reply("Please Enter location:", chat)
@@ -100,7 +110,7 @@ def handle_updates(updates):
                     db.delete_item(chat)
                     send_reply("Your appointment is cancelled", chat)
                 elif text.lower() == "\start":
-                    continue 
+                    continue
                 else:
                     if record[5]:
                         message = "Your Appointment is already booked!.. {} , Your {} vaccination apppointment is booked successfully for {}'o clock on {} at {} \n Send <Cancel | cancel> to delete".format(
